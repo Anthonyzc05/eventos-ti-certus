@@ -1,0 +1,153 @@
+:root {
+  --marino: #0e1c57;
+  --marino-hover: #1e2f7a;
+  --orquidea: #a33bae;
+  --orquidea-suave: #f1e2f4;
+  --fondo: #f5f4f8;
+  --superficie: #ffffff;
+  --texto: #191a2e;
+  --texto-suave: #5c5d75;
+  --texto-claro: #b9bedd;
+  --borde: #e0dee9;
+  --borde-fuerte: #c5c2d3;
+  --error: #b3372f;
+  --error-fondo: #fbe1de;
+  --radio: 6px;
+  --fuente-titulos: 'Bricolage Grotesque', system-ui, sans-serif;
+  --fuente-texto: 'Instrument Sans', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: var(--fuente-texto);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+h1, h2 { font-family: var(--fuente-titulos); margin: 0; }
+p { margin: 0; }
+
+:focus-visible { outline: 3px solid var(--orquidea); outline-offset: 2px; }
+
+.estado-carga { padding: 48px; color: var(--texto-suave); }
+
+/* ---------- Login ---------- */
+.login { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+
+.login__marca {
+  position: relative;
+  overflow: hidden;
+  background: var(--marino);
+  color: #fff;
+  padding: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.login__logo { display: flex; flex-direction: column; gap: 2px; margin-bottom: 72px; }
+.login__logo strong { font-family: var(--fuente-titulos); font-size: 20px; font-weight: 600; }
+.login__logo span { font-size: 12px; color: var(--texto-claro); }
+.login__marca h1 {
+  font-size: clamp(36px, 3.6vw, 52px);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  max-width: 520px;
+}
+.login__marca > p { color: var(--texto-claro); max-width: 440px; font-size: 16px; }
+
+.login__acceso { display: flex; align-items: center; justify-content: center; padding: 48px 24px; }
+.login__form { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 16px; }
+.login__form h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+.login__form > p { color: var(--texto-suave); }
+.login__ayuda { font-size: 13px; color: var(--texto-suave); }
+
+.boton-google {
+  margin-top: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  height: 46px;
+  background: var(--superficie);
+  color: var(--texto);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio);
+  font: 600 15px var(--fuente-texto);
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+.boton-google:hover:not(:disabled) { background: #fafafe; border-color: var(--marino); }
+.boton-google:active:not(:disabled) { background: var(--orquidea-suave); }
+.boton-google:disabled { opacity: 0.65; cursor: progress; }
+
+.login__error {
+  background: var(--error-fondo);
+  color: var(--error);
+  border-radius: var(--radio);
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Afiches decorativos */
+.afiche {
+  position: absolute;
+  width: 273px; height: 341px;
+  padding: 20px;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex; flex-direction: column; gap: 5px;
+  box-shadow: 0 14px 30px rgba(5, 10, 40, 0.35);
+}
+.afiche > span { position: relative; }
+.afiche__forma { position: absolute !important; width: 180px; height: 180px; border-radius: 50%; right: -60px; top: -50px; }
+.afiche__etiqueta { font-size: 7.5px; }
+.afiche__dia { font-family: var(--fuente-titulos); font-weight: 800; font-size: 104px; line-height: 93px; letter-spacing: -0.04em; }
+.afiche__mes { font-family: var(--fuente-titulos); font-weight: 600; font-size: 12px; }
+.afiche__titulo { margin-top: auto; font-family: var(--fuente-titulos); font-weight: 800; font-size: 24px; line-height: 26px; letter-spacing: -0.02em; }
+.afiche__expositor { font-size: 9px; }
+
+.afiche--papel { background: var(--superficie); color: var(--marino); }
+.afiche--papel .afiche__forma { background: var(--orquidea-suave); }
+.afiche--papel .afiche__etiqueta, .afiche--papel .afiche__mes, .afiche--papel .afiche__expositor { color: var(--texto-suave); }
+.afiche--papel .afiche__titulo { color: var(--texto); }
+
+.afiche--orquidea { background: var(--orquidea); color: #fff; }
+.afiche--orquidea .afiche__forma { background: var(--marino); }
+
+.login__afiche--uno { left: 130px; bottom: -40px; transform: rotate(4deg); }
+.login__afiche--dos { left: 372px; bottom: 0; transform: rotate(-5deg); }
+
+/* Un solo momento de movimiento: los afiches entran al cargar la página. */
+@keyframes entrada-uno { from { transform: translateY(40px) rotate(8deg); opacity: 0; } to { transform: translateY(0) rotate(4deg); opacity: 1; } }
+@keyframes entrada-dos { from { transform: translateY(60px) rotate(-9deg); opacity: 0; } to { transform: translateY(0) rotate(-5deg); opacity: 1; } }
+.login__afiche--uno { animation: entrada-uno 700ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.login__afiche--dos { animation: entrada-dos 800ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* ---------- Pantalla provisional ---------- */
+.provisional { max-width: 640px; margin: 0 auto; padding: 96px 24px; display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+.provisional h1 { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; }
+.provisional__nota { color: var(--texto-suave); }
+.boton-secundario {
+  margin-top: 8px; height: 40px; padding: 0 18px;
+  background: var(--superficie); color: var(--texto);
+  border: 1px solid var(--borde-fuerte); border-radius: var(--radio);
+  font: 600 14px var(--fuente-texto); cursor: pointer;
+}
+.boton-secundario:hover { border-color: var(--marino); }
+
+/* ---------- Celular y tablet ---------- */
+@media (max-width: 900px) {
+  .login { grid-template-columns: 1fr; }
+  .login__marca { padding: 32px 24px 40px; }
+  .login__logo { margin-bottom: 28px; }
+  .login__afiche { display: none; }
+  .login__acceso { padding: 40px 24px 64px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login__afiche--uno, .login__afiche--dos { animation: none; }
+  .boton-google { transition: none; }
+}

@@ -1,0 +1,35 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Administrador = cuenta de Google verificada del dominio institucional
+    // Y que esté registrada en la colección "admins" (el id del documento es su correo).
+    function esAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.matches('.*@certus[.]edu[.]pe')
+        && exists(/databases/$(database)/documents/admins/$(request.auth.token.email));
+    }
+
+    // Cada persona solo puede consultar su propio documento (para saber si es admin).
+    // Nadie puede crear ni editar admins desde la app: se agregan desde la consola de Firebase.
+    match /admins/{correo} {
+      allow get: if request.auth != null && request.auth.token.email == correo;
+      allow list, create, update, delete: if false;
+    }
+
+    // Eventos: solo administradores (siguiente avance).
+    match /eventos/{eventoId} {
+      allow read, write: if esAdmin();
+    }
+
+    // Inscripciones: cualquier persona puede inscribirse; solo administradores las consultan.
+    match /inscripciones/{inscripcionId} {
+      allow create: if request.resource.data.keys().hasOnly(['eventoId', 'nombre', 'correo', 'programa', 'creadoEn'])
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 120
+        && request.resource.data.correo is string && request.resource.data.correo.size() <= 120;
+      allow read, update, delete: if esAdmin();
+    }
+  }
+}
