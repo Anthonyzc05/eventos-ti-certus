@@ -8,15 +8,6 @@ Aplicación web responsiva para organizar eventos académicos de TI y generar ar
 
 React + Vite · Firebase Authentication · Cloud Firestore
 
-## Cómo ejecutarlo en tu computadora
-
-```bash
-npm install
-cp .env.example .env   # luego pega los datos de tu proyecto de Firebase
-npm run dev
-```
-
-Abre `http://localhost:5173`.
 
 ## Configurar Firebase (una sola vez)
 
