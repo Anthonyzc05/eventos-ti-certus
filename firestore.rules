@@ -19,16 +19,53 @@ service cloud.firestore {
       allow list, create, update, delete: if false;
     }
 
-    // Eventos: solo administradores (siguiente avance).
-    match /eventos/{eventoId} {
-      allow read, write: if esAdmin();
+    // Campos y tipos que debe tener un evento (en update se valida el documento resultante).
+    function eventoValido(d) {
+      return d.keys().hasOnly(['titulo','fecha','hora','modalidad','lugar','expositor','descripcion','estado','creadoEn','creadoPor'])
+        && d.keys().hasAll(['titulo','fecha','hora','modalidad','lugar','expositor','descripcion','estado','creadoEn','creadoPor'])
+        && d.titulo is string && d.titulo.size() >= 3 && d.titulo.size() <= 120
+        && d.fecha is string && d.fecha.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && d.hora is string && d.hora.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
+        && d.modalidad in ['Presencial','Virtual','Híbrido']
+        && d.lugar is string && d.lugar.size() >= 2 && d.lugar.size() <= 150
+        && d.expositor is string && d.expositor.size() >= 2 && d.expositor.size() <= 100
+        && d.descripcion is string && d.descripcion.size() >= 10 && d.descripcion.size() <= 800
+        && d.estado in ['borrador','publicado']
+        && d.creadoPor is string;
     }
 
-    // Inscripciones: cualquier persona puede inscribirse; solo administradores las consultan.
+    // Eventos:
+    // - Cualquier persona puede ABRIR un evento publicado si conoce su enlace (get),
+    //   pero no puede listar todos los eventos.
+    // - Solo los administradores listan, crean, editan y borran.
+    match /eventos/{eventoId} {
+      allow get: if esAdmin() || resource.data.estado == 'publicado';
+      allow list, delete: if esAdmin();
+      allow create: if esAdmin() && eventoValido(request.resource.data)
+                    && request.resource.data.creadoPor == request.auth.uid;
+      allow update: if esAdmin() && eventoValido(request.resource.data);
+    }
+
+    // Inscripciones:
+    // - El id del documento es "<eventoId>_<correo>", así una misma persona
+    //   no puede inscribirse dos veces al mismo evento (el segundo intento sería un
+    //   "update", que está prohibido).
+    // - Solo se puede inscribir a un evento que exista y esté publicado.
+    // - Solo los administradores leen las inscripciones.
     match /inscripciones/{inscripcionId} {
       allow create: if request.resource.data.keys().hasOnly(['eventoId', 'nombre', 'correo', 'programa', 'creadoEn'])
-        && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 120
-        && request.resource.data.correo is string && request.resource.data.correo.size() <= 120;
+        && request.resource.data.keys().hasAll(['eventoId', 'nombre', 'correo', 'programa', 'creadoEn'])
+        && request.resource.data.eventoId is string
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() >= 3 && request.resource.data.nombre.size() <= 120
+        && request.resource.data.correo is string
+        && request.resource.data.correo.size() <= 120
+        && request.resource.data.correo.matches('^[^@\\s]+@[^@\\s]+[.][^@\\s]+$')
+        && request.resource.data.correo == request.resource.data.correo.lower()
+        && request.resource.data.programa is string && request.resource.data.programa.size() <= 120
+        && request.resource.data.creadoEn == request.time
+        && inscripcionId == request.resource.data.eventoId + '_' + request.resource.data.correo
+        && get(/databases/$(database)/documents/eventos/$(request.resource.data.eventoId)).data.estado == 'publicado';
       allow read, update, delete: if esAdmin();
     }
   }
