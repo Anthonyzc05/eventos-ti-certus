@@ -88,3 +88,8 @@ export function limpiarEvento(v) {
     estado: v.estado,
   };
 }
+
+// Un evento ya ocurrió cuando su fecha y hora de inicio quedaron atrás.
+export function yaOcurrio(evento) {
+  return new Date(`${evento.fecha}T${evento.hora || '23:59'}`) < new Date();
+}

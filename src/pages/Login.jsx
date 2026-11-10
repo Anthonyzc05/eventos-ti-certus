@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { DOMINIO_PERMITIDO } from '../firebase';
 import Afiche from '../components/Afiche';
+import logoCertus from '../assets/certus-logo.png';
 
 function IconoGoogle() {
   return (
@@ -31,8 +32,11 @@ export default function Login() {
     <main className="login">
       <section className="login__marca">
         <div className="login__logo">
-          <strong>Tech-Events</strong>
-          <span>CERTUS · Área de TI</span>
+          <img src={logoCertus} alt="CERTUS" className="login__certus" />
+          <div className="login__nombre">
+            <strong>Tech-Events</strong>
+            <span>Área de TI</span>
+          </div>
         </div>
         <h1>Un evento, registrado una sola vez.</h1>
         <p>Con los mismos datos salen el arte y los textos para WhatsApp, LinkedIn y Facebook.</p>
@@ -43,7 +47,7 @@ export default function Login() {
       <section className="login__acceso">
         <div className="login__form">
           <h2>Ingresar</h2>
-          <p>Acceso solo para el personal del área de TI de CERTUS.</p>
+          <p>Acceso para el personal del área de TI de CERTUS.</p>
 
           <button type="button" className="boton-google" onClick={alContinuar} disabled={enviando || cargando}>
             <IconoGoogle />
@@ -59,6 +63,29 @@ export default function Login() {
           <p className="login__ayuda">
             Usa tu correo @{DOMINIO_PERMITIDO}. Las cuentas personales no tienen acceso.
           </p>
+        </div>
+
+        <div className="login__extra">
+          <p className="login__alumnos">
+            <strong>¿Eres alumno?</strong> Para inscribirte a un evento, abre el enlace o escanea el QR que te compartieron.
+          </p>
+          <ol className="login__pasos">
+            <li>
+              <span>
+                <strong>Registra</strong> el evento una sola vez.
+              </span>
+            </li>
+            <li>
+              <span>
+                <strong>Descarga</strong> el arte y los textos para redes.
+              </span>
+            </li>
+            <li>
+              <span>
+                <strong>Comparte</strong> el enlace o el QR de inscripción.
+              </span>
+            </li>
+          </ol>
         </div>
       </section>
     </main>

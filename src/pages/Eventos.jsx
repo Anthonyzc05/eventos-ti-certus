@@ -1,20 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { listarEventos, formatearFecha } from '../lib/eventos';
-import { hoyISO } from '../lib/validacion';
-
-const FILTROS = [
-  { id: 'proximos', texto: 'Próximos' },
-  { id: 'pasados', texto: 'Pasados' },
-  { id: 'todos', texto: 'Todos' },
-];
+import Afiche from '../components/Afiche';
+import { yaOcurrio } from '../lib/validacion';
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const CLASE_MODALIDAD = { Presencial: 'presencial', Virtual: 'virtual', Híbrido: 'hibrido' };
 
-function FechaBloque({ fecha }) {
+const inicio = (e) => new Date(`${e.fecha}T${e.hora || '23:59'}`);
+
+const MENSAJE_VACIO = {
+  proximos: 'No hay eventos próximos.',
+  pasados: 'Aún no hay eventos pasados.',
+  borradores: 'No tienes borradores. Todos tus eventos están publicados.',
+  todos: 'No hay eventos.',
+};
+
+function FechaBloque({ fecha, modalidad }) {
   const [, m, d] = fecha.split('-').map(Number);
   return (
-    <div className="evento__fecha" aria-hidden="true">
+    <div className={`evento__fecha evento__fecha--${CLASE_MODALIDAD[modalidad] || 'presencial'}`} aria-hidden="true">
       <strong>{d}</strong>
       <span>{MESES[m - 1]}</span>
     </div>
@@ -45,33 +50,57 @@ export default function Eventos() {
     cargar();
   }, [cargar]);
 
-  // El aviso "Evento guardado" se muestra una vez y se limpia del historial.
+  // El aviso se muestra una vez y se limpia del historial.
   useEffect(() => {
     if (state?.aviso) navigate('/eventos', { replace: true, state: null });
   }, [state, navigate]);
 
-    const visibles = useMemo(() => {
-    if (!eventos) return [];
+  const grupos = useMemo(() => {
+    const lista = eventos || [];
     const ahora = new Date();
-    // Un evento es "pasado" cuando su fecha y hora de inicio ya ocurrieron.
-    const inicio = (e) => new Date(`${e.fecha}T${e.hora || '23:59'}`);
-    if (filtro === 'proximos') {
-      return eventos.filter((e) => inicio(e) >= ahora).sort((a, b) => inicio(a) - inicio(b));
-    }
-    if (filtro === 'pasados') return eventos.filter((e) => inicio(e) < ahora);
-    return eventos;
-  }, [eventos, filtro]);
+    return {
+      proximos: lista.filter((e) => inicio(e) >= ahora).sort((a, b) => inicio(a) - inicio(b)),
+      pasados: lista.filter((e) => inicio(e) < ahora),
+      borradores: lista.filter((e) => e.estado === 'borrador'),
+      todos: lista,
+    };
+  }, [eventos]);
+
+  const TILES = [
+    { id: 'proximos', texto: 'Próximos', color: 'marino' },
+    { id: 'pasados', texto: 'Pasados', color: 'turquesa' },
+    { id: 'todos', texto: 'Todos', color: 'morado' },
+    { id: 'borradores', texto: 'Borradores', color: 'rosa' },
+  ];
+  const visibles = grupos[filtro];
 
   return (
     <section>
-      <div className="pagina__titulo">
-        <div>
+      <header className="hero">
+        <div className="hero__texto">
           <h1>Eventos</h1>
           <p>Registra una vez cada evento; con sus datos se generan el arte y los textos.</p>
+          <Link to="/eventos/nuevo" className="boton-hero">
+            + Nuevo evento
+          </Link>
         </div>
-        <Link to="/eventos/nuevo" className="boton-primario">
-          + Nuevo evento
-        </Link>
+        <Afiche variante="papel" className="hero__afiche hero__afiche--uno" />
+        <Afiche variante="orquidea" className="hero__afiche hero__afiche--dos" />
+      </header>
+
+      <div className="resumen" role="group" aria-label="Filtrar eventos">
+        {TILES.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className={`tile tile--${t.color}`}
+            aria-pressed={filtro === t.id}
+            onClick={() => setFiltro(t.id)}
+          >
+            <strong>{eventos ? grupos[t.id].length : '–'}</strong>
+            <span>{t.texto}</span>
+          </button>
+        ))}
       </div>
 
       {aviso && (
@@ -82,21 +111,6 @@ export default function Eventos() {
           </button>
         </p>
       )}
-
-      <div className="filtros" role="tablist" aria-label="Filtrar eventos">
-        {FILTROS.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            role="tab"
-            aria-selected={filtro === f.id}
-            className={filtro === f.id ? 'activo' : undefined}
-            onClick={() => setFiltro(f.id)}
-          >
-            {f.texto}
-          </button>
-        ))}
-      </div>
 
       {error && (
         <div className="estado-vacio" role="alert">
@@ -121,15 +135,15 @@ export default function Eventos() {
 
       {!error && eventos && eventos.length > 0 && visibles.length === 0 && (
         <div className="estado-vacio">
-          <p>No hay eventos {filtro === 'proximos' ? 'próximos' : 'pasados'}.</p>
+          <p>{MENSAJE_VACIO[filtro]}</p>
         </div>
       )}
 
       {visibles.length > 0 && (
         <ul className="eventos">
           {visibles.map((e) => (
-            <li key={e.id} className="evento">
-              <FechaBloque fecha={e.fecha} />
+            <li key={e.id} className={`evento${yaOcurrio(e) ? ' evento--pasado' : ''}`}>
+              <FechaBloque fecha={e.fecha} modalidad={e.modalidad} />
               <div className="evento__datos">
                 <h2>{e.titulo}</h2>
                 <p>{formatearFecha(e.fecha, e.hora)}</p>
@@ -137,10 +151,19 @@ export default function Eventos() {
                   {e.expositor} · {e.modalidad} · {e.lugar}
                 </p>
               </div>
-              <span className={`chip chip--${e.estado}`}>{e.estado === 'publicado' ? 'Publicado' : 'Borrador'}</span>
-              <Link to={`/eventos/${e.id}/editar`} className="boton-secundario boton-secundario--chico">
-                Editar
-              </Link>
+              {yaOcurrio(e) ? (
+                <>
+                  <span className="chip chip--finalizado">Finalizado</span>
+                  <span className="evento__sin-accion" aria-hidden="true" />
+                </>
+              ) : (
+                <>
+                  <span className={`chip chip--${e.estado}`}>{e.estado === 'publicado' ? 'Publicado' : 'Borrador'}</span>
+                  <Link to={`/eventos/${e.id}/editar`} className="boton-secundario boton-secundario--chico">
+                    Editar
+                  </Link>
+                </>
+              )}
             </li>
           ))}
         </ul>

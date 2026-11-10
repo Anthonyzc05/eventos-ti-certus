@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { actualizarEvento, crearEvento, MODALIDADES, obtenerEvento } from '../lib/eventos';
-import { EVENTO_VACIO, LIMITES, hoyISO, limpiarEvento, validarEvento } from '../lib/validacion';
+import { EVENTO_VACIO, LIMITES, hoyISO, limpiarEvento, validarEvento, yaOcurrio } from '../lib/validacion';
 
 function Campo({ id, etiqueta, error, ayuda, children }) {
   return (
@@ -40,6 +40,7 @@ export default function EventoForm() {
         const evento = await obtenerEvento(id);
         if (!vigente) return;
         if (!evento) setErrorGeneral('No encontramos este evento. Puede que se haya eliminado.');
+        else if (yaOcurrio(evento)) setErrorGeneral('Este evento ya finalizó, por eso no se puede editar.');
         else setValores({ ...EVENTO_VACIO, ...evento });
       } catch (e) {
         console.error('Error al cargar el evento:', e);
@@ -166,7 +167,7 @@ export default function EventoForm() {
           id="campo-estado"
           etiqueta="Estado"
           error={errores.estado}
-          ayuda="Un evento en borrador solo lo ves tú. Al publicarlo, sus enlaces de inscripción quedan activos."
+          ayuda="Un borrador lo ven solo los administradores. Al publicarlo, los alumnos podrán inscribirse con su enlace."
         >
           <select {...props('estado')} id="campo-estado">
             <option value="borrador">Borrador</option>

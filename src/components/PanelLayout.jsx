@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
+import logoCertus from '../assets/certus-logo.png';
 
 // Estructura común del panel: encabezado con navegación y zona de contenido.
 export default function PanelLayout() {
@@ -10,8 +11,11 @@ export default function PanelLayout() {
     <div className="panel">
       <header className="panel__cabecera">
         <div className="panel__marca">
-          <strong>Tech-Events</strong>
-          <span>CERTUS · Área de TI</span>
+          <img src={logoCertus} alt="CERTUS" className="panel__certus" />
+          <div className="panel__nombre">
+            <strong>Tech-Events</strong>
+            <span>Área de TI</span>
+          </div>
         </div>
 
         <nav className="panel__nav" aria-label="Principal">
