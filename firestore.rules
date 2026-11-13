@@ -12,6 +12,13 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/admins/$(request.auth.token.email));
     }
 
+    // Cuenta institucional verificada (administrador o alumno).
+    function esCertus() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.matches('.*@certus[.]edu[.]pe');
+    }
+
     // Cada persona solo puede consultar su propio documento (para saber si es admin).
     // Nadie puede crear ni editar admins desde la app: se agregan desde la consola de Firebase.
     match /admins/{correo} {
@@ -34,10 +41,7 @@ service cloud.firestore {
         && d.creadoPor is string;
     }
 
-    // Eventos:
-    // - Cualquier persona puede ABRIR un evento publicado si conoce su enlace (get),
-    //   pero no puede listar todos los eventos.
-    // - Solo los administradores listan, crean, editan y borran.
+    // Eventos: cualquiera abre un evento publicado con su enlace (get), solo admins listan/crean/editan/borran.
     match /eventos/{eventoId} {
       allow get: if esAdmin() || resource.data.estado == 'publicado';
       allow list, delete: if esAdmin();
@@ -46,14 +50,11 @@ service cloud.firestore {
       allow update: if esAdmin() && eventoValido(request.resource.data);
     }
 
-    // Inscripciones:
-    // - El id del documento es "<eventoId>_<correo>", así una misma persona
-    //   no puede inscribirse dos veces al mismo evento (el segundo intento sería un
-    //   "update", que está prohibido).
-    // - Solo se puede inscribir a un evento que exista y esté publicado.
-    // - Solo los administradores leen las inscripciones.
+    // Inscripciones: requieren sesión institucional y que el correo inscrito sea el de esa cuenta.
     match /inscripciones/{inscripcionId} {
-      allow create: if request.resource.data.keys().hasOnly(['eventoId', 'nombre', 'correo', 'programa', 'creadoEn'])
+      allow create: if esCertus()
+        && request.resource.data.correo == request.auth.token.email.lower()
+        && request.resource.data.keys().hasOnly(['eventoId', 'nombre', 'correo', 'programa', 'creadoEn'])
         && request.resource.data.keys().hasAll(['eventoId', 'nombre', 'correo', 'programa', 'creadoEn'])
         && request.resource.data.eventoId is string
         && request.resource.data.nombre is string
