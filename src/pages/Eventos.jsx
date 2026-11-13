@@ -157,13 +157,18 @@ export default function Eventos() {
                   <span className={`chip chip--${e.estado}`}>{e.estado === 'publicado' ? 'Publicado' : 'Borrador'}</span>
                   <div className="evento__acciones">
                     {e.estado === 'publicado' && (
-                      <button
-                        type="button"
-                        className="boton-secundario boton-secundario--chico"
-                        onClick={() => setCompartir(e)}
-                      >
-                        Compartir
-                      </button>
+                      <>
+                        <Link to={`/eventos/${e.id}/difusion`} className="boton-secundario boton-secundario--chico">
+                          Difusión
+                        </Link>
+                        <button
+                          type="button"
+                          className="boton-secundario boton-secundario--chico"
+                          onClick={() => setCompartir(e)}
+                        >
+                          Compartir
+                        </button>
+                      </>
                     )}
                     {e.estado === 'publicado' && (
                       <Link to={`/eventos/${e.id}/participantes`} className="boton-secundario boton-secundario--chico">
