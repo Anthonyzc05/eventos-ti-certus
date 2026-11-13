@@ -7,7 +7,6 @@ const AuthContext = createContext(null);
 
 const MENSAJES = {
   dominio: `Usa tu correo institucional @${DOMINIO_PERMITIDO}. Las cuentas personales no tienen acceso.`,
-  sinPermiso: 'Tu cuenta no tiene permisos de administrador. Pide acceso al área de TI.',
   verificacion: 'No pudimos verificar tu acceso. Revisa tu conexión e inténtalo de nuevo.',
   general: 'No pudimos iniciar sesión. Inténtalo de nuevo.',
 };
@@ -34,8 +33,10 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      // 2) El dominio incluye a todos los estudiantes, así que además el correo
-      //    debe estar en la colección "admins" de Firestore.
+      // 2) El dominio incluye a todos los estudiantes. Cualquiera con cuenta institucional
+      //    puede tener sesión (para inscribirse a un evento), pero solo quien esté en la
+      //    colección "admins" de Firestore es administrador y entra al panel.
+      let esAdmin = false;
       try {
         // Si Firestore no responde en 10 s, mostramos un error en vez de quedarnos esperando.
         const snap = await Promise.race([
@@ -44,19 +45,15 @@ export function AuthProvider({ children }) {
             setTimeout(() => rechazar(Object.assign(new Error('Firestore no respondió'), { code: 'timeout' })), 10000),
           ),
         ]);
-        if (!snap.exists()) {
-          setError(MENSAJES.sinPermiso);
-          await signOut(auth);
-          return;
-        }
+        esAdmin = snap.exists();
         setError('');
-        setUsuario({ uid: u.uid, correo, nombre: u.displayName || correo, foto: u.photoURL || '' });
-        setCargando(false);
       } catch (e) {
+        // Si no se pudo verificar, la persona queda como no administradora; el login muestra el motivo.
         console.error('Error al consultar admins:', e);
         setError(`${MENSAJES.verificacion} (código: ${e.code || e.message})`);
-        await signOut(auth);
       }
+      setUsuario({ uid: u.uid, correo, nombre: u.displayName || correo, foto: u.photoURL || '', esAdmin });
+      setCargando(false);
     });
     return cancelar;
   }, []);

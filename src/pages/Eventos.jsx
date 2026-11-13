@@ -3,9 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { listarEventos, formatearFecha } from '../lib/eventos';
 import Afiche from '../components/Afiche';
 import { yaOcurrio } from '../lib/validacion';
-
-const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-const CLASE_MODALIDAD = { Presencial: 'presencial', Virtual: 'virtual', Híbrido: 'hibrido' };
+import FechaBloque from '../components/FechaBloque';
+import CompartirEvento from '../components/CompartirEvento';
 
 const inicio = (e) => new Date(`${e.fecha}T${e.hora || '23:59'}`);
 
@@ -16,21 +15,12 @@ const MENSAJE_VACIO = {
   todos: 'No hay eventos.',
 };
 
-function FechaBloque({ fecha, modalidad }) {
-  const [, m, d] = fecha.split('-').map(Number);
-  return (
-    <div className={`evento__fecha evento__fecha--${CLASE_MODALIDAD[modalidad] || 'presencial'}`} aria-hidden="true">
-      <strong>{d}</strong>
-      <span>{MESES[m - 1]}</span>
-    </div>
-  );
-}
-
 // CU4 · Listar eventos.
 export default function Eventos() {
   const [eventos, setEventos] = useState(null); // null = cargando
   const [error, setError] = useState('');
   const [filtro, setFiltro] = useState('proximos');
+  const [compartir, setCompartir] = useState(null); // evento cuyo enlace y QR se muestran
   const { state } = useLocation();
   const navigate = useNavigate();
   const [aviso, setAviso] = useState(state?.aviso || '');
@@ -154,20 +144,44 @@ export default function Eventos() {
               {yaOcurrio(e) ? (
                 <>
                   <span className="chip chip--finalizado">Finalizado</span>
-                  <span className="evento__sin-accion" aria-hidden="true" />
+                  <div className="evento__acciones">
+                    {e.estado === 'publicado' && (
+                      <Link to={`/eventos/${e.id}/participantes`} className="boton-secundario boton-secundario--chico">
+                        Participantes
+                      </Link>
+                    )}
+                  </div>
                 </>
               ) : (
                 <>
                   <span className={`chip chip--${e.estado}`}>{e.estado === 'publicado' ? 'Publicado' : 'Borrador'}</span>
-                  <Link to={`/eventos/${e.id}/editar`} className="boton-secundario boton-secundario--chico">
-                    Editar
-                  </Link>
+                  <div className="evento__acciones">
+                    {e.estado === 'publicado' && (
+                      <button
+                        type="button"
+                        className="boton-secundario boton-secundario--chico"
+                        onClick={() => setCompartir(e)}
+                      >
+                        Compartir
+                      </button>
+                    )}
+                    {e.estado === 'publicado' && (
+                      <Link to={`/eventos/${e.id}/participantes`} className="boton-secundario boton-secundario--chico">
+                        Participantes
+                      </Link>
+                    )}
+                    <Link to={`/eventos/${e.id}/editar`} className="boton-secundario boton-secundario--chico">
+                      Editar
+                    </Link>
+                  </div>
                 </>
               )}
             </li>
           ))}
         </ul>
       )}
+
+      {compartir && <CompartirEvento evento={compartir} onCerrar={() => setCompartir(null)} />}
     </section>
   );
 }

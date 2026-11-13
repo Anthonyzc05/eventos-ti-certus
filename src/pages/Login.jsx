@@ -4,23 +4,15 @@ import { useAuth } from '../AuthContext';
 import { DOMINIO_PERMITIDO } from '../firebase';
 import Afiche from '../components/Afiche';
 import logoCertus from '../assets/certus-logo.png';
-
-function IconoGoogle() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
-      <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z" />
-      <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z" />
-      <path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z" />
-      <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z" />
-    </svg>
-  );
-}
+import IconoGoogle from '../components/IconoGoogle';
 
 export default function Login() {
-  const { usuario, cargando, error, iniciarConGoogle } = useAuth();
+  const { usuario, cargando, error, iniciarConGoogle, cerrarSesion } = useAuth();
   const [enviando, setEnviando] = useState(false);
 
-  if (!cargando && usuario) return <Navigate to="/eventos" replace />;
+  if (!cargando && usuario?.esAdmin) return <Navigate to="/eventos" replace />;
+  // Inició sesión con una cuenta institucional que no es de administrador.
+  const sinPermiso = !cargando && usuario && !usuario.esAdmin;
 
   async function alContinuar() {
     setEnviando(true);
@@ -49,12 +41,24 @@ export default function Login() {
           <h2>Ingresar</h2>
           <p>Acceso para el personal del área de TI de CERTUS.</p>
 
-          <button type="button" className="boton-google" onClick={alContinuar} disabled={enviando || cargando}>
-            <IconoGoogle />
-            {enviando ? 'Abriendo Google…' : 'Continuar con Google'}
-          </button>
+          {sinPermiso ? (
+            <>
+              <p className="login__error" role="alert">
+                {error || 'Tu cuenta no tiene permisos de administrador. Pide acceso al área de TI.'}
+              </p>
+              <p className="login__ayuda">Sesión iniciada como {usuario.correo}.</p>
+              <button type="button" className="boton-google" onClick={cerrarSesion}>
+                Usar otra cuenta
+              </button>
+            </>
+          ) : (
+            <button type="button" className="boton-google" onClick={alContinuar} disabled={enviando || cargando}>
+              <IconoGoogle />
+              {enviando ? 'Abriendo Google…' : 'Continuar con Google'}
+            </button>
+          )}
 
-          {error && (
+          {error && !sinPermiso && (
             <p className="login__error" role="alert">
               {error}
             </p>

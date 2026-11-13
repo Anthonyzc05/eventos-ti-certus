@@ -132,7 +132,7 @@ p { margin: 0; }
 .afiche--papel .afiche__titulo { color: var(--texto); }
 
 .afiche--orquidea { background: var(--orquidea); color: #fff; }
-.afiche--orquidea .afiche__forma { background: #8a7fd6; }
+.afiche--orquidea .afiche__forma { background: #9db4f0; }
 
 .login__afiche--uno { left: 130px; bottom: -40px; transform: rotate(4deg); }
 .login__afiche--dos { left: 372px; bottom: 0; transform: rotate(-5deg); }
@@ -367,3 +367,91 @@ p { margin: 0; }
 @media (max-width: 520px) {
   .panel__nombre { display: none; }
 }
+
+/* ---------- Compartir (modal) ---------- */
+.evento__acciones { display: flex; gap: 8px; min-width: 82px; justify-content: flex-end; }
+.modal-fondo {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px;
+  background: rgba(10, 21, 68, 0.62);
+}
+.modal {
+  width: min(440px, 100%); max-height: 100%; overflow: auto;
+  display: flex; flex-direction: column; gap: 16px;
+  background: var(--superficie); border-radius: 16px; padding: 24px;
+  box-shadow: 0 24px 60px rgba(5, 10, 40, 0.4);
+}
+.modal__cabecera { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.modal__cabecera h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+.modal__cabecera p { color: var(--texto-suave); margin-top: 2px; }
+.modal__cerrar {
+  flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--fondo);
+  font-size: 22px; line-height: 1; color: var(--texto); cursor: pointer;
+}
+.modal__cerrar:hover { background: var(--orquidea-suave); }
+.modal__qr { display: grid; place-items: center; padding: 16px; border: 1px solid var(--borde); border-radius: 12px; background: #fff; }
+.modal__qr canvas { display: block; }
+.modal__nota { color: var(--texto-suave); font-size: 14px; }
+.modal__enlace { display: flex; gap: 8px; }
+.modal__enlace input {
+  flex: 1; min-width: 0; padding: 0 12px; height: 44px; font: 14px var(--fuente-texto); color: var(--texto);
+  border: 1px solid var(--borde-fuerte); border-radius: 10px; background: var(--fondo);
+}
+.modal__enlace .boton-primario { white-space: nowrap; }
+.modal > .boton-secundario { margin-top: 0; height: 44px; }
+
+/* ---------- Página pública de inscripción ---------- */
+.publico { min-height: 100vh; }
+.publico__cabecera {
+  display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 32px;
+  background: var(--marino); color: #fff;
+}
+.publico__contenido { max-width: 640px; margin: 0 auto; padding: 32px 20px 80px; display: flex; flex-direction: column; gap: 20px; }
+.detalle {
+  display: grid; grid-template-columns: 88px 1fr; gap: 20px; align-items: start;
+  background: var(--superficie); border: 1px solid var(--borde); border-radius: 16px; padding: 24px;
+}
+.detalle .evento__fecha { height: 88px; }
+.detalle__datos h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+.detalle__datos p { color: var(--texto-suave); margin-top: 4px; }
+.detalle__datos .detalle__cuando { color: var(--texto); font-weight: 600; margin-top: 8px; }
+.detalle__datos .detalle__cuando::first-letter { text-transform: uppercase; }
+.detalle__descripcion { grid-column: 1 / -1; line-height: 1.55; max-width: 62ch; }
+.inscripcion { background: var(--superficie); border: 1px solid var(--borde); border-top: 5px solid var(--morado); border-radius: 16px; padding: 28px; }
+.inscripcion h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; }
+.inscripcion__acceso, .inscripcion__form { display: flex; flex-direction: column; gap: 14px; }
+.inscripcion__acceso > p, .inscripcion__sesion { color: var(--texto-suave); }
+.inscripcion__sesion strong { color: var(--texto); word-break: break-all; }
+.enlace { background: none; border: 0; padding: 0; color: var(--morado); font: 600 14px var(--fuente-texto); text-decoration: underline; cursor: pointer; }
+.inscripcion__form .boton-primario { align-self: flex-start; }
+.exito { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.exito__icono { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--turquesa); color: #fff; font-size: 26px; font-weight: 800; }
+.exito p { color: var(--texto-suave); max-width: 48ch; }
+.estado-vacio h1 { font-size: 24px; font-weight: 700; }
+
+@media (max-width: 700px) {
+  .evento__acciones { grid-column: 1 / -1; }
+  .evento__acciones > * { flex: 1; }
+  .publico__cabecera { padding: 0 16px; }
+  .detalle { grid-template-columns: 64px 1fr; gap: 14px; padding: 18px; }
+  .detalle .evento__fecha { height: 64px; }
+  .detalle__datos h1 { font-size: 21px; }
+  .inscripcion { padding: 20px; }
+  .modal__enlace { flex-direction: column; }
+}
+
+/* ---------- CU8 · Participantes ---------- */
+.visualmente-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.participantes__cabecera { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.participantes__cabecera h1 { font-family: var(--fuente-titulos); color: var(--marino); font-size: 30px; line-height: 1.15; margin: 0 0 6px; }
+.participantes__cabecera p { margin: 0; color: var(--texto-suave); }
+.participantes__total { margin-top: 6px !important; }
+.participantes__total strong { color: var(--marino); font-size: 22px; font-family: var(--fuente-titulos); }
+.participantes__cabecera .boton-primario { margin-top: 0; }
+.participantes__buscar { display: block; margin-bottom: 14px; }
+.participantes__buscar input { width: 100%; max-width: 420px; height: 44px; padding: 0 16px; border: 1px solid var(--borde-fuerte); border-radius: 999px; font: inherit; background: var(--superficie); }
+.participantes__buscar input:focus-visible { outline: 3px solid var(--orquidea); outline-offset: 2px; }
+.tabla-scroll { overflow-x: auto; background: var(--superficie); border: 1px solid var(--borde); border-radius: 14px; }
+.tabla { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }
+.tabla th { text-align: left; padding: 12px 16px; background: #eef0fa; color: var(--marino); font-weight: 700; font-size: 13px; }
+.tabla td { padding: 12px 16px; border-top: 1px solid var(--borde); overflow-wrap: anywhere; }
+.tabla tbody tr:hover { background: #faf9fd; }
