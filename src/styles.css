@@ -179,7 +179,7 @@ p { margin: 0; }
 .panel { min-height: 100vh; display: flex; flex-direction: column; }
 .panel__cabecera {
   display: flex; align-items: center; gap: 28px;
-  padding: 0 max(24px, calc((100% - 1240px) / 2 + 24px)); height: 64px;
+  padding: 0 32px; height: 64px;
   background: var(--marino); color: #fff;
 }
 .panel__marca { display: flex; align-items: center; gap: 10px; }
