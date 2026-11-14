@@ -7,6 +7,7 @@ import {
   getDocs,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -32,6 +33,7 @@ export async function obtenerEvento(id) {
 export async function crearEvento(datos, uid) {
   const ref = await addDoc(collection(db, 'eventos'), {
     ...datos,
+    inscritos: 0,
     creadoEn: serverTimestamp(),
     creadoPor: uid,
   });
@@ -64,14 +66,30 @@ export async function listarInscritos(eventoId) {
 
 // Lo usa la página pública. El id "<eventoId>_<correo>" evita inscripciones duplicadas:
 // si ya existe, Firestore lo trata como "update" y las reglas lo rechazan (permission-denied).
+// Con una transacción se guarda la inscripción y se suma 1 al contador "inscritos" del evento,
+// y se respeta el límite de cupos aunque dos personas se inscriban al mismo tiempo.
 export async function inscribirse(eventoId, { nombre, correo, programa }) {
   const correoLimpio = correo.trim().toLowerCase();
-  await setDoc(doc(db, 'inscripciones', `${eventoId}_${correoLimpio}`), {
-    eventoId,
-    nombre: nombre.trim(),
-    correo: correoLimpio,
-    programa: programa.trim(),
-    creadoEn: serverTimestamp(),
+  const refEvento = doc(db, 'eventos', eventoId);
+  const refInscripcion = doc(db, 'inscripciones', `${eventoId}_${correoLimpio}`);
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(refEvento);
+    if (!snap.exists() || snap.data().estado !== 'publicado') {
+      throw Object.assign(new Error('Evento no disponible'), { code: 'evento-no-disponible' });
+    }
+    const { cupos = null, inscritos = 0 } = snap.data();
+    if (cupos !== null && inscritos >= cupos) {
+      throw Object.assign(new Error('Cupos agotados'), { code: 'cupos-agotados' });
+    }
+    tx.set(refInscripcion, {
+      eventoId,
+      nombre: nombre.trim(),
+      correo: correoLimpio,
+      programa: programa.trim(),
+      creadoEn: serverTimestamp(),
+    });
+    tx.update(refEvento, { inscritos: inscritos + 1 });
   });
 }
 

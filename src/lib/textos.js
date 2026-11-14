@@ -13,8 +13,13 @@ const resumir = (t, max) => {
   if (limpio.length <= max) return limpio;
   return limpio.slice(0, max).replace(/\s+\S*$/, '') + '…';
 };
-const lugarTexto = (e) =>
-  e.modalidad === 'Virtual' ? `Virtual · ${e.lugar}` : e.modalidad === 'Híbrido' ? `Híbrido · ${e.lugar}` : e.lugar;
+const lugarTexto = (e) => {
+  const lugar = e.lugar.trim();
+  if (e.modalidad === 'Presencial') return lugar;
+  // Evita repetir "Virtual · Virtual" si el lugar ya dice la modalidad.
+  if (lugar.toLowerCase().includes(e.modalidad.toLowerCase())) return lugar;
+  return `${e.modalidad} · ${lugar}`;
+};
 
 export const TONOS = { cercano: 'Cercano', formal: 'Formal' };
 
@@ -23,6 +28,8 @@ export function generarTextos(e, url, tono = 'cercano') {
   const hora = horaTxt(e.hora);
   const lugar = lugarTexto(e);
   const cercano = tono === 'cercano';
+  const cupos = e.cupos ? `\n👥 Cupos limitados: ${e.cupos}` : '';
+  const cuposFormal = e.cupos ? `\nCupos: ${e.cupos} (limitados)` : '';
 
   const whatsapp = cercano
     ? `🚀 *${e.titulo}*
@@ -32,7 +39,7 @@ ${e.descripcion}
 📅 ${fecha}
 🕒 ${hora}
 📍 ${lugar}
-🎤 ${e.expositor}
+🎤 ${e.expositor}${cupos}
 
 ✅ Inscríbete con tu correo CERTUS:
 ${url}
@@ -47,19 +54,19 @@ ${e.descripcion}
 Fecha: ${fecha}
 Hora: ${hora}
 Lugar: ${lugar}
-Expositor: ${e.expositor}
+Expositor: ${e.expositor}${cuposFormal}
 
 Inscripción con su cuenta institucional (@certus.edu.pe):
 ${url}`;
 
   const linkedin = cercano
-    ? `Esta vez en CERTUS hablamos de ${e.titulo}. 💡
+    ? `Nuevo evento en CERTUS: ${e.titulo} 💡
 
 ${e.descripcion}
 
 🎤 Expositor: ${e.expositor}
 📅 ${fecha} · ${hora}
-📍 ${lugar}
+📍 ${lugar}${cupos}
 
 Si estudias o trabajas en tecnología, es una buena oportunidad para aprender y conectar con otros estudiantes.
 
@@ -72,7 +79,7 @@ ${e.descripcion}
 
 Expositor: ${e.expositor}
 Fecha y hora: ${fecha}, ${hora}
-Modalidad y lugar: ${e.modalidad} · ${e.lugar}
+Modalidad y lugar: ${e.modalidad} · ${e.lugar}${cuposFormal}
 
 La inscripción se realiza con la cuenta institucional en el siguiente enlace:
 ${url}
@@ -86,7 +93,7 @@ ${resumir(e.descripcion, 280)}
 
 📅 ${fecha} a las ${hora}
 📍 ${lugar}
-🎤 ${e.expositor}
+🎤 ${e.expositor}${cupos}
 
 Inscríbete con tu cuenta @certus.edu.pe 👇
 ${url}`
@@ -96,7 +103,7 @@ ${resumir(e.descripcion, 280)}
 
 Fecha: ${fecha}, ${hora}
 Lugar: ${lugar}
-Expositor: ${e.expositor}
+Expositor: ${e.expositor}${cuposFormal}
 
 Inscripciones: ${url}`;
 

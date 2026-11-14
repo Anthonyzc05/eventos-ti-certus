@@ -15,6 +15,34 @@ const MENSAJE_VACIO = {
   todos: 'No hay eventos.',
 };
 
+// Cupos ocupados con barra; sin límite, solo el número de inscritos.
+function Ocupacion({ evento: e }) {
+  if (e.estado !== 'publicado') return <div className="evento__ocupacion" />;
+  const n = e.inscritos ?? 0;
+  if (!e.cupos) {
+    return (
+      <div className="evento__ocupacion">
+        <strong>{n}</strong>
+        <span>{n === 1 ? 'inscrito' : 'inscritos'}</span>
+      </div>
+    );
+  }
+  const pct = Math.min(100, Math.round((n / e.cupos) * 100));
+  const nivel = pct >= 100 ? ' ocupacion__barra--lleno' : pct >= 80 ? ' ocupacion__barra--pocos' : '';
+  return (
+    <div className="evento__ocupacion">
+      <strong>
+        {n}
+        <small> / {e.cupos}</small>
+      </strong>
+      <span>{pct >= 100 ? 'cupos agotados' : 'cupos ocupados'}</span>
+      <div className={`ocupacion__barra${nivel}`} role="img" aria-label={`${n} de ${e.cupos} cupos ocupados`}>
+        <i style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
 // CU4 · Listar eventos.
 export default function Eventos() {
   const [eventos, setEventos] = useState(null); // null = cargando
@@ -135,52 +163,42 @@ export default function Eventos() {
             <li key={e.id} className={`evento${yaOcurrio(e) ? ' evento--pasado' : ''}`}>
               <FechaBloque fecha={e.fecha} modalidad={e.modalidad} />
               <div className="evento__datos">
-                <h2>{e.titulo}</h2>
+                <div className="evento__titulo">
+                  <h2>{e.titulo}</h2>
+                  {yaOcurrio(e) ? (
+                    <span className="chip chip--finalizado">Finalizado</span>
+                  ) : (
+                    <span className={`chip chip--${e.estado}`}>{e.estado === 'publicado' ? 'Publicado' : 'Borrador'}</span>
+                  )}
+                </div>
                 <p>{formatearFecha(e.fecha, e.hora)}</p>
                 <p className="evento__meta">
                   {e.expositor} · {e.modalidad} · {e.lugar}
                 </p>
               </div>
-              {yaOcurrio(e) ? (
-                <>
-                  <span className="chip chip--finalizado">Finalizado</span>
-                  <div className="evento__acciones">
-                    {e.estado === 'publicado' && (
-                      <Link to={`/eventos/${e.id}/participantes`} className="boton-secundario boton-secundario--chico">
-                        Participantes
-                      </Link>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <span className={`chip chip--${e.estado}`}>{e.estado === 'publicado' ? 'Publicado' : 'Borrador'}</span>
-                  <div className="evento__acciones">
-                    {e.estado === 'publicado' && (
-                      <>
-                        <Link to={`/eventos/${e.id}/difusion`} className="boton-secundario boton-secundario--chico">
-                          Difusión
-                        </Link>
-                        <button
-                          type="button"
-                          className="boton-secundario boton-secundario--chico"
-                          onClick={() => setCompartir(e)}
-                        >
-                          Compartir
-                        </button>
-                      </>
-                    )}
-                    {e.estado === 'publicado' && (
-                      <Link to={`/eventos/${e.id}/participantes`} className="boton-secundario boton-secundario--chico">
-                        Participantes
-                      </Link>
-                    )}
-                    <Link to={`/eventos/${e.id}/editar`} className="boton-secundario boton-secundario--chico">
-                      Editar
+              <Ocupacion evento={e} />
+              <div className="evento__acciones">
+                {e.estado === 'publicado' && !yaOcurrio(e) && (
+                  <>
+                    <Link to={`/eventos/${e.id}/difusion`} className="boton-primario boton-primario--chico">
+                      Difusión
                     </Link>
-                  </div>
-                </>
-              )}
+                    <button type="button" className="boton-secundario boton-secundario--chico" onClick={() => setCompartir(e)}>
+                      Compartir
+                    </button>
+                  </>
+                )}
+                {e.estado === 'publicado' && (
+                  <Link to={`/eventos/${e.id}/participantes`} className="boton-secundario boton-secundario--chico">
+                    Participantes
+                  </Link>
+                )}
+                {!yaOcurrio(e) && (
+                  <Link to={`/eventos/${e.id}/editar`} className="boton-secundario boton-secundario--chico">
+                    Editar
+                  </Link>
+                )}
+              </div>
             </li>
           ))}
         </ul>

@@ -28,7 +28,7 @@ service cloud.firestore {
 
     // Campos y tipos que debe tener un evento (en update se valida el documento resultante).
     function eventoValido(d) {
-      return d.keys().hasOnly(['titulo','fecha','hora','modalidad','lugar','expositor','descripcion','estado','creadoEn','creadoPor'])
+      return d.keys().hasOnly(['titulo','fecha','hora','modalidad','lugar','expositor','descripcion','estado','creadoEn','creadoPor','cupos','inscritos'])
         && d.keys().hasAll(['titulo','fecha','hora','modalidad','lugar','expositor','descripcion','estado','creadoEn','creadoPor'])
         && d.titulo is string && d.titulo.size() >= 3 && d.titulo.size() <= 120
         && d.fecha is string && d.fecha.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
@@ -38,19 +38,46 @@ service cloud.firestore {
         && d.expositor is string && d.expositor.size() >= 2 && d.expositor.size() <= 100
         && d.descripcion is string && d.descripcion.size() >= 10 && d.descripcion.size() <= 800
         && d.estado in ['borrador','publicado']
-        && d.creadoPor is string;
+        && d.creadoPor is string
+        && (!('cupos' in d) || d.cupos == null || (d.cupos is int && d.cupos >= 1 && d.cupos <= 5000))
+        && (!('inscritos' in d) || (d.inscritos is int && d.inscritos >= 0));
     }
 
-    // Eventos: cualquiera abre un evento publicado con su enlace (get), solo admins listan/crean/editan/borran.
+    // Una persona con cuenta institucional solo puede sumar 1 al contador "inscritos" de un evento
+    // publicado, y únicamente junto con su propia inscripción (se envían juntas en una transacción),
+    // sin pasar el límite de cupos.
+    function sumaSuInscripcion(eventoId) {
+      let docInscripcion = /databases/$(database)/documents/inscripciones/$(eventoId + '_' + request.auth.token.email.lower());
+      return esCertus()
+        && resource.data.estado == 'publicado'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inscritos'])
+        && request.resource.data.inscritos == resource.data.get('inscritos', 0) + 1
+        && (resource.data.get('cupos', null) == null || request.resource.data.inscritos <= resource.data.cupos)
+        && !exists(docInscripcion)
+        && existsAfter(docInscripcion);
+    }
+
+    // Eventos:
+    // - Cualquier persona puede ABRIR un evento publicado si conoce su enlace (get),
+    //   pero no puede listar todos los eventos.
+    // - Solo los administradores listan, crean, editan y borran.
     match /eventos/{eventoId} {
       allow get: if esAdmin() || resource.data.estado == 'publicado';
       allow list, delete: if esAdmin();
       allow create: if esAdmin() && eventoValido(request.resource.data)
-                    && request.resource.data.creadoPor == request.auth.uid;
-      allow update: if esAdmin() && eventoValido(request.resource.data);
+                    && request.resource.data.creadoPor == request.auth.uid
+                    && request.resource.data.get('inscritos', 0) == 0;
+      allow update: if (esAdmin() && eventoValido(request.resource.data)) || sumaSuInscripcion(eventoId);
     }
 
-    // Inscripciones: requieren sesión institucional y que el correo inscrito sea el de esa cuenta.
+    // Inscripciones:
+    // - El id del documento es "<eventoId>_<correo>", así una misma persona
+    //   no puede inscribirse dos veces al mismo evento (el segundo intento sería un
+    //   "update", que está prohibido).
+    // - Solo se puede inscribir a un evento que exista y esté publicado.
+    // - Hay que tener sesión con una cuenta institucional, y el correo inscrito debe ser el de esa cuenta
+    //   (nadie puede inscribir a otra persona).
+    // - Solo los administradores leen las inscripciones.
     match /inscripciones/{inscripcionId} {
       allow create: if esCertus()
         && request.resource.data.correo == request.auth.token.email.lower()
@@ -66,7 +93,9 @@ service cloud.firestore {
         && request.resource.data.programa is string && request.resource.data.programa.size() <= 120
         && request.resource.data.creadoEn == request.time
         && inscripcionId == request.resource.data.eventoId + '_' + request.resource.data.correo
-        && get(/databases/$(database)/documents/eventos/$(request.resource.data.eventoId)).data.estado == 'publicado';
+        && get(/databases/$(database)/documents/eventos/$(request.resource.data.eventoId)).data.estado == 'publicado'
+        && getAfter(/databases/$(database)/documents/eventos/$(request.resource.data.eventoId)).data.get('inscritos', 0)
+           == get(/databases/$(database)/documents/eventos/$(request.resource.data.eventoId)).data.get('inscritos', 0) + 1;
       allow read, update, delete: if esAdmin();
     }
   }

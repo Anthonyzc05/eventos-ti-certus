@@ -63,7 +63,7 @@ export default function EventoForm() {
   async function guardar(e) {
     e.preventDefault();
     setErrorGeneral('');
-    const encontrados = validarEvento(valores, { esNuevo });
+    const encontrados = validarEvento(valores, { esNuevo, inscritos: valores.inscritos || 0 });
     setErrores(encontrados);
     const primero = Object.keys(encontrados)[0];
     if (primero) {
@@ -117,7 +117,7 @@ export default function EventoForm() {
       <div className="pagina__titulo">
         <div>
           <h1>{esNuevo ? 'Nuevo evento' : 'Editar evento'}</h1>
-          <p>Todos los campos son obligatorios.</p>
+          <p>Todos los campos son obligatorios, menos los cupos.</p>
         </div>
       </div>
 
@@ -152,6 +152,15 @@ export default function EventoForm() {
 
         <Campo id="campo-expositor" etiqueta="Expositor" error={errores.expositor}>
           <input type="text" placeholder="Nombre de quien dicta el evento" {...props('expositor')} id="campo-expositor" />
+        </Campo>
+
+        <Campo
+          id="campo-cupos"
+          etiqueta="Cupos (opcional)"
+          error={errores.cupos}
+          ayuda="Déjalo vacío si no hay límite. Como guía: un aula suele ser de unas 30 personas; un evento virtual puede ser mucho mayor."
+        >
+          <input type="number" inputMode="numeric" min="1" step="1" placeholder="Ej. 30" {...props('cupos')} id="campo-cupos" />
         </Campo>
 
         <Campo

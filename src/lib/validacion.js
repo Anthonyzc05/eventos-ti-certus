@@ -11,6 +11,9 @@ export const LIMITES = {
 
 export const ESTADOS = ['borrador', 'publicado'];
 
+// Cupos máximos que se pueden configurar (vacío = sin límite).
+export const CUPOS_MAX = 5000;
+
 export const EVENTO_VACIO = {
   titulo: '',
   fecha: '',
@@ -19,6 +22,7 @@ export const EVENTO_VACIO = {
   lugar: '',
   expositor: '',
   descripcion: '',
+  cupos: '',
   estado: 'borrador',
 };
 
@@ -37,7 +41,7 @@ function fechaReal(texto) {
   return f.getFullYear() === a && f.getMonth() === m - 1 && f.getDate() === d;
 }
 
-export function validarEvento(v, { esNuevo = true } = {}) {
+export function validarEvento(v, { esNuevo = true, inscritos = 0 } = {}) {
   const errores = {};
   const texto = (campo) => (v[campo] || '').trim();
 
@@ -70,6 +74,15 @@ export function validarEvento(v, { esNuevo = true } = {}) {
   else if (texto('descripcion').length < dMin) errores.descripcion = `Describe el evento con al menos ${dMin} caracteres.`;
   else if (texto('descripcion').length > dMax) errores.descripcion = `La descripción no puede pasar de ${dMax} caracteres.`;
 
+  const cupos = String(v.cupos ?? '').trim();
+  if (cupos !== '') {
+    if (!/^\d+$/.test(cupos) || Number(cupos) < 1 || Number(cupos) > CUPOS_MAX) {
+      errores.cupos = `Escribe un número entero entre 1 y ${CUPOS_MAX}, o déjalo vacío si no hay límite.`;
+    } else if (!esNuevo && Number(cupos) < inscritos) {
+      errores.cupos = `Ya hay ${inscritos} inscritos; los cupos no pueden ser menos que eso.`;
+    }
+  }
+
   if (!ESTADOS.includes(v.estado)) errores.estado = 'Elige un estado.';
 
   return errores;
@@ -85,6 +98,7 @@ export function limpiarEvento(v) {
     lugar: v.lugar.trim(),
     expositor: v.expositor.trim(),
     descripcion: v.descripcion.trim(),
+    cupos: String(v.cupos ?? '').trim() === '' ? null : Number(v.cupos),
     estado: v.estado,
   };
 }

@@ -47,12 +47,17 @@ export default function Inscripcion() {
     };
   }, [id]);
 
-  // Al iniciar sesión se sugiere el nombre de la cuenta de Google.
+  // Cada vez que cambia la cuenta, el formulario se reinicia: nunca se arrastran datos de otra persona.
+  // Con una cuenta nueva se sugiere el nombre que trae su cuenta de Google.
+  const correoActual = usuario?.correo;
+  const nombreGoogle = usuario && usuario.nombre !== usuario.correo ? usuario.nombre : '';
   useEffect(() => {
-    if (usuario && usuario.nombre !== usuario.correo) {
-      setValores((v) => (v.nombre ? v : { ...v, nombre: usuario.nombre }));
-    }
-  }, [usuario]);
+    setValores({ nombre: nombreGoogle, programa: '' });
+    setErrores({});
+    setErrorEnvio('');
+    setHecho(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [correoActual]);
 
   async function alContinuar() {
     setAbriendo(true);
@@ -82,11 +87,16 @@ export default function Inscripcion() {
       setHecho(true);
     } catch (err) {
       console.error('Error al inscribirse:', err);
-      setErrorEnvio(
-        err.code === 'permission-denied'
-          ? 'No pudimos completar la inscripción. Es posible que ya estés inscrito en este evento.'
-          : `No pudimos completar la inscripción. Revisa tu conexión e inténtalo de nuevo. (código: ${err.code || err.message})`,
-      );
+      if (err.code === 'cupos-agotados') {
+        // Alguien tomó el último lugar mientras llenabas el formulario.
+        setEvento((ev) => ({ ...ev, inscritos: ev.cupos }));
+      } else {
+        setErrorEnvio(
+          err.code === 'permission-denied'
+            ? 'No pudimos completar la inscripción. Es posible que ya estés inscrito en este evento.'
+            : `No pudimos completar la inscripción. Revisa tu conexión e inténtalo de nuevo. (código: ${err.code || err.message})`,
+        );
+      }
     } finally {
       setEnviando(false);
     }
@@ -104,6 +114,9 @@ export default function Inscripcion() {
     );
   } else {
     const finalizado = yaOcurrio(evento);
+    const cupos = evento.cupos ?? null;
+    const restantes = cupos === null ? null : Math.max(0, cupos - (evento.inscritos ?? 0));
+    const agotado = restantes === 0;
     cuerpo = (
       <>
         <article className="detalle">
@@ -115,6 +128,13 @@ export default function Inscripcion() {
               {evento.modalidad} · {evento.lugar}
             </p>
             <p>Expositor: {evento.expositor}</p>
+            {restantes !== null && (
+              <p className={`cupos${agotado ? ' cupos--agotado' : restantes <= 5 ? ' cupos--pocos' : ''}`}>
+                {agotado
+                  ? 'Cupos agotados'
+                  : `${restantes === 1 ? 'Queda' : 'Quedan'} ${restantes} de ${cupos} ${cupos === 1 ? 'cupo' : 'cupos'}`}
+              </p>
+            )}
           </div>
           <p className="detalle__descripcion">{evento.descripcion}</p>
         </article>
@@ -135,6 +155,10 @@ export default function Inscripcion() {
                 Guardamos tu inscripción con el correo {usuario.correo}; no necesitas hacer nada más.
               </p>
             </div>
+          ) : agotado ? (
+            <p className="aviso aviso--error" role="status">
+              Los cupos de este evento se agotaron. Ya no hay lugares disponibles.
+            </p>
           ) : !usuario ? (
             <div className="inscripcion__acceso">
               <h2>Inscríbete</h2>
