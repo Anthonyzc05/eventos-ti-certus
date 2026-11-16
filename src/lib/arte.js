@@ -29,6 +29,34 @@ function cargarLogo() {
   return logoPromesa;
 }
 
+// La foto del expositor viene como data URL; si no carga, el arte se dibuja sin ella.
+function cargarFoto(src) {
+  if (!src) return Promise.resolve(null);
+  return new Promise((ok) => {
+    const img = new Image();
+    img.onload = () => ok(img.naturalWidth ? img : null);
+    img.onerror = () => ok(null);
+    img.src = src;
+  });
+}
+
+// Foto recortada en círculo con un aro de color.
+function dibujarFoto(ctx, foto, x, y, d, aro, grosor) {
+  const r = d / 2;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x + r, y + r, r, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(foto, x, y, d, d);
+  ctx.restore();
+  ctx.beginPath();
+  ctx.arc(x + r, y + r, r - grosor / 2, 0, Math.PI * 2);
+  ctx.lineWidth = grosor;
+  ctx.strokeStyle = aro;
+  ctx.stroke();
+}
+
 async function cargarFuentes() {
   if (!document.fonts?.load) return;
   try {
@@ -136,7 +164,7 @@ function dibujarQr(ctx, qr, x, y, tam, p, escala) {
 }
 
 export async function dibujarArte(canvas, { evento, plantilla, formato, qr, url = '' }) {
-  const [logo] = await Promise.all([cargarLogo(), cargarFuentes()]);
+  const [logo, foto] = await Promise.all([cargarLogo(), cargarFoto(evento.foto), cargarFuentes()]);
   const f = FORMATOS[formato];
   const p = PLANTILLAS[plantilla];
   const W = f.ancho;
@@ -161,7 +189,7 @@ export async function dibujarArte(canvas, { evento, plantilla, formato, qr, url 
   else ctx.arc(W * 0.9, W * 0.05, W * 0.3, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
-  if (horizontal) puntos(ctx, 56, H - 120, 4, 8, 22, 3, p.puntos);
+  if (horizontal) { if (!foto) puntos(ctx, 56, H - 120, 4, 8, 22, 3, p.puntos); }
   else puntos(ctx, W - m - 7 * W * 0.034, H - m - 6 * W * 0.034 - W * 0.03, 6, 8, W * 0.034, W * 0.004, p.puntos);
 
   const esc = base / 1080;
@@ -188,14 +216,20 @@ export async function dibujarArte(canvas, { evento, plantilla, formato, qr, url 
       y += t.tam * 1.08;
     });
 
+    y += 12;
+    const D = foto ? 100 : 0;
+    const off = foto ? D + 22 : 0;
+    if (foto) {
+      dibujarFoto(ctx, foto, m, y - 36, D, p.acento, 6);
+      y += (D - 66) / 2 - 2; // centra el texto frente al círculo
+    }
     ctx.font = `700 28px ${TEXTO}`;
     ctx.fillStyle = p.texto;
-    y += 12;
-    ctx.fillText(evento.expositor, m, y);
+    ctx.fillText(envolver(ctx, evento.expositor, colAncho - off)[0], m + off, y);
     ctx.font = `400 25px ${TEXTO}`;
     ctx.fillStyle = p.suave;
     y += 38;
-    ctx.fillText(envolver(ctx, detalle, colAncho)[0], m, y);
+    ctx.fillText(envolver(ctx, detalle, colAncho - off)[0], m + off, y);
 
     // Columna derecha: fecha + QR
     const cx = W * 0.7;
@@ -256,7 +290,8 @@ export async function dibujarArte(canvas, { evento, plantilla, formato, qr, url 
     y += W * 0.02;
 
     const limiteInferior = H - m * 1.15;
-    const altoTitulo = limiteInferior - y - W * 0.17;
+    const D = foto ? W * 0.16 : 0;
+    const altoTitulo = limiteInferior - y - Math.max(W * 0.17, D + W * 0.05);
     const maxLineas = formato === 'vertical' ? 5 : 4;
     const t = ajustarTitulo(ctx, evento.titulo, W - m * 2, maxLineas, W * 0.095, W * 0.05, altoTitulo);
     ctx.fillStyle = p.texto;
@@ -269,18 +304,28 @@ export async function dibujarArte(canvas, { evento, plantilla, formato, qr, url 
 
     // Expositor y detalle
     y += W * 0.012;
+    const off = foto ? D + W * 0.03 : 0;
+    const anchoTexto = W - m * 2 - off;
+    ctx.font = `400 ${W * 0.033}px ${TEXTO}`;
+    const lineasDetalle = envolver(ctx, detalle, anchoTexto).slice(0, 2);
+    const bloqueTop = y - W * 0.035;
+    let yTexto = y;
+    if (foto) {
+      dibujarFoto(ctx, foto, m, bloqueTop, D, p.acento, W * 0.006);
+      const altoTexto = W * 0.052 + lineasDetalle.length * W * 0.045;
+      yTexto = bloqueTop + Math.max(0, (D - altoTexto) / 2) + W * 0.04;
+    }
     ctx.font = `700 ${W * 0.038}px ${TEXTO}`;
     ctx.fillStyle = p.texto;
-    ctx.fillText(envolver(ctx, evento.expositor, W - m * 2)[0], m, y);
-    y += W * 0.052;
+    ctx.fillText(envolver(ctx, evento.expositor, anchoTexto)[0], m + off, yTexto);
+    yTexto += W * 0.052;
     ctx.font = `400 ${W * 0.033}px ${TEXTO}`;
     ctx.fillStyle = p.suave;
-    envolver(ctx, detalle, W - m * 2)
-      .slice(0, 2)
-      .forEach((l) => {
-        ctx.fillText(l, m, y);
-        y += W * 0.045;
-      });
+    lineasDetalle.forEach((l) => {
+      ctx.fillText(l, m + off, yTexto);
+      yTexto += W * 0.045;
+    });
+    y = foto ? Math.max(yTexto, bloqueTop + D) : yTexto;
 
     // Pie
     if (urlCorta) {

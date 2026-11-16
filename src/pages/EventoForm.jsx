@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { actualizarEvento, crearEvento, MODALIDADES, obtenerEvento } from '../lib/eventos';
+import { procesarFoto } from '../lib/foto';
 import { EVENTO_VACIO, LIMITES, hoyISO, limpiarEvento, validarEvento, yaOcurrio } from '../lib/validacion';
 
 function Campo({ id, etiqueta, error, ayuda, children }) {
@@ -31,6 +32,7 @@ export default function EventoForm() {
   const [cargando, setCargando] = useState(!esNuevo);
   const [guardando, setGuardando] = useState(false);
   const [errorGeneral, setErrorGeneral] = useState('');
+  const [errorFoto, setErrorFoto] = useState('');
 
   useEffect(() => {
     if (esNuevo) return;
@@ -58,6 +60,19 @@ export default function EventoForm() {
     const { name, value } = e.target;
     setValores((v) => ({ ...v, [name]: value }));
     if (errores[name]) setErrores((er) => ({ ...er, [name]: undefined }));
+  }
+
+  async function elegirFoto(e) {
+    const archivo = e.target.files?.[0];
+    e.target.value = ''; // permite volver a elegir el mismo archivo
+    if (!archivo) return;
+    setErrorFoto('');
+    try {
+      const foto = await procesarFoto(archivo);
+      setValores((v) => ({ ...v, foto }));
+    } catch (err) {
+      setErrorFoto(err.message);
+    }
   }
 
   async function guardar(e) {
@@ -153,6 +168,39 @@ export default function EventoForm() {
         <Campo id="campo-expositor" etiqueta="Expositor" error={errores.expositor}>
           <input type="text" placeholder="Nombre de quien dicta el evento" {...props('expositor')} id="campo-expositor" />
         </Campo>
+
+        <div className="campo foto-campo">
+          <label htmlFor="campo-foto">Foto del expositor (opcional)</label>
+          <div className="foto-campo__fila">
+            {valores.foto ? (
+              <img src={valores.foto} alt="Vista previa de la foto del expositor" className="foto-campo__vista" />
+            ) : (
+              <span className="foto-campo__vista foto-campo__vista--vacia" aria-hidden="true">
+                {(valores.expositor || '?').trim().charAt(0).toUpperCase() || '?'}
+              </span>
+            )}
+            <div className="foto-campo__botones">
+              <label className="boton-secundario boton-secundario--chico foto-campo__subir">
+                {valores.foto ? 'Cambiar foto' : 'Subir foto'}
+                <input id="campo-foto" type="file" accept="image/jpeg,image/png,image/webp" onChange={elegirFoto} />
+              </label>
+              {valores.foto && (
+                <button
+                  type="button"
+                  className="boton-secundario boton-secundario--chico"
+                  onClick={() => setValores((v) => ({ ...v, foto: '' }))}
+                >
+                  Quitar
+                </button>
+              )}
+            </div>
+          </div>
+          {errorFoto ? (
+            <small className="campo__error" role="alert">{errorFoto}</small>
+          ) : (
+            <small>Saldrá en un círculo dentro del arte para redes. Mejor una foto de frente, con el rostro centrado.</small>
+          )}
+        </div>
 
         <Campo
           id="campo-cupos"

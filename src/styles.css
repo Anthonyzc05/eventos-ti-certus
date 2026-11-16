@@ -520,3 +520,12 @@ p { margin: 0; }
 .cupos { display: inline-block; margin-top: 6px !important; padding: 4px 12px; border-radius: 999px; background: #dff5f6; color: #0a6a70; font-weight: 700; font-size: 13px; }
 .cupos--pocos { background: #fdf0d5; color: #8a5a00; }
 .cupos--agotado { background: var(--error-fondo); color: var(--error); }
+
+/* ---------- Foto del expositor (formulario) ---------- */
+.foto-campo__fila { display: flex; align-items: center; gap: 16px; }
+.foto-campo__vista { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; flex: none; border: 3px solid var(--orquidea); }
+.foto-campo__vista--vacia { display: grid; place-items: center; background: var(--orquidea-suave, #f1d9f4); color: var(--orquidea); font: 800 30px var(--fuente-titulos); }
+.foto-campo__botones { display: flex; flex-wrap: wrap; gap: 8px; }
+.foto-campo__subir { position: relative; cursor: pointer; }
+.foto-campo__subir input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.foto-campo__subir:focus-within { outline: 3px solid var(--cian); outline-offset: 2px; }

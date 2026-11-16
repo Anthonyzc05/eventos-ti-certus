@@ -23,6 +23,7 @@ export const EVENTO_VACIO = {
   expositor: '',
   descripcion: '',
   cupos: '',
+  foto: '',
   estado: 'borrador',
 };
 
@@ -99,6 +100,7 @@ export function limpiarEvento(v) {
     expositor: v.expositor.trim(),
     descripcion: v.descripcion.trim(),
     cupos: String(v.cupos ?? '').trim() === '' ? null : Number(v.cupos),
+    foto: v.foto || null,
     estado: v.estado,
   };
 }
