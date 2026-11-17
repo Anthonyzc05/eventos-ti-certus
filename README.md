@@ -58,4 +58,5 @@ firestore.rules   Reglas de seguridad de la base de datos
 vercel.json       Reescritura de rutas para la SPA
 ```
 
-**Equipo 5 · CERTUS** · Desarrollo: Anthony Zuñiga Cavero
+**Equipo 5 · CERTUS** · Desarrollo: Anthony Zuñiga Cavero - Wyll Achulle - Piero Pealez - Alessandro Garcia - Yoffri Yalli 
+https://eventos-ti-certus.vercel.app/ (USUARIOS PERMITIDOS INGRESAN A LA PLATAFORMA)
