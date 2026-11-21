@@ -116,7 +116,7 @@ eventos-ti-certus/
     │   └── validacion.js   Reglas del formulario del evento (CU10)
     └── pages/
         ├── Login.jsx         Pantalla de inicio de sesión (CU1)
-        ├── Eventos.jsx       Lista de eventos con acciones (CU4)
+        ├── Eventos.jsx       Lista de eventos con buscador, filtros y paginación (CU4)
         ├── EventoForm.jsx    Crear y editar evento (CU2 y CU3)
         ├── Difusion.jsx      Arte y textos para redes de un evento (CU5 y CU6)
         ├── Participantes.jsx Lista, búsqueda y exportación CSV (CU8)
@@ -337,4 +337,5 @@ Funciones de ayuda dentro de las reglas: `esAdmin()` (cuenta verificada del domi
 
 ---
 
-**Equipo 5 · CERTUS** · Caso 2: Gestor de eventos académicos de TI · Desarrollo: Anthony Zuñiga Cavero
+
+**Equipo 5 · CERTUS** · Caso 2: Gestor de eventos académicos de TI · Desarrollo: Anthony Zuñiga Cavero - - Wyll Achulle - Piero Pealez - Alessandro Garcia - Yoffri Yalli 
