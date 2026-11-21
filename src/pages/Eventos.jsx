@@ -6,6 +6,18 @@ import { yaOcurrio } from '../lib/validacion';
 import FechaBloque from '../components/FechaBloque';
 import CompartirEvento from '../components/CompartirEvento';
 
+const POR_PAGINA = 20;
+
+// Minúsculas y sin tildes, para que "tecnologia" encuentre "Tecnología".
+const normalizar = (t) =>
+  String(t ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+const textoBusqueda = (e) =>
+  normalizar([e.titulo, e.expositor, e.lugar, e.modalidad, e.descripcion, e.fecha, formatearFecha(e.fecha, e.hora)].join(' '));
+
 const inicio = (e) => new Date(`${e.fecha}T${e.hora || '23:59'}`);
 
 const MENSAJE_VACIO = {
@@ -48,6 +60,8 @@ export default function Eventos() {
   const [eventos, setEventos] = useState(null); // null = cargando
   const [error, setError] = useState('');
   const [filtro, setFiltro] = useState('proximos');
+  const [busqueda, setBusqueda] = useState('');
+  const [mostrar, setMostrar] = useState(POR_PAGINA);
   const [compartir, setCompartir] = useState(null); // evento cuyo enlace y QR se muestran
   const { state } = useLocation();
   const navigate = useNavigate();
@@ -90,7 +104,22 @@ export default function Eventos() {
     { id: 'todos', texto: 'Todos', color: 'morado' },
     { id: 'borradores', texto: 'Borradores', color: 'rosa' },
   ];
-  const visibles = grupos[filtro];
+  const palabras = normalizar(busqueda).split(/\s+/).filter(Boolean);
+  const visibles = useMemo(() => {
+    const base = grupos[filtro];
+    if (!palabras.length) return base;
+    return base.filter((e) => {
+      const t = textoBusqueda(e);
+      return palabras.every((p) => t.includes(p)); // todas las palabras deben aparecer
+    });
+  }, [grupos, filtro, busqueda]); // eslint-disable-line react-hooks/exhaustive-deps
+  const buscando = palabras.length > 0;
+  const enPantalla = visibles.slice(0, mostrar);
+
+  // Al cambiar de pestaña o de búsqueda se vuelve a la primera página.
+  useEffect(() => {
+    setMostrar(POR_PAGINA);
+  }, [filtro, busqueda]);
 
   return (
     <section>
@@ -139,6 +168,28 @@ export default function Eventos() {
         </div>
       )}
 
+      {eventos && eventos.length > 0 && (
+        <div className="buscador">
+          <label className="buscador__campo">
+            <span className="visualmente-oculto">Buscar eventos</span>
+            <input
+              type="search"
+              placeholder="Buscar por título, expositor, lugar o fecha"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </label>
+          {buscando && (
+            <p className="buscador__cuenta" role="status">
+              {visibles.length} {visibles.length === 1 ? 'resultado' : 'resultados'}
+              <button type="button" onClick={() => setBusqueda('')}>
+                Limpiar
+              </button>
+            </p>
+          )}
+        </div>
+      )}
+
       {!error && eventos === null && <p className="estado-carga">Cargando eventos…</p>}
 
       {!error && eventos && eventos.length === 0 && (
@@ -153,13 +204,18 @@ export default function Eventos() {
 
       {!error && eventos && eventos.length > 0 && visibles.length === 0 && (
         <div className="estado-vacio">
-          <p>{MENSAJE_VACIO[filtro]}</p>
+          <p>{buscando ? `No encontramos eventos para “${busqueda.trim()}”${filtro === 'todos' ? '.' : ' en esta pestaña.'}` : MENSAJE_VACIO[filtro]}</p>
+          {buscando && filtro !== 'todos' && (
+            <button type="button" className="boton-secundario" onClick={() => setFiltro('todos')}>
+              Buscar en todos los eventos
+            </button>
+          )}
         </div>
       )}
 
       {visibles.length > 0 && (
         <ul className="eventos">
-          {visibles.map((e) => (
+          {enPantalla.map((e) => (
             <li key={e.id} className={`evento${yaOcurrio(e) ? ' evento--pasado' : ''}`}>
               <FechaBloque fecha={e.fecha} modalidad={e.modalidad} />
               <div className="evento__datos">
@@ -202,6 +258,14 @@ export default function Eventos() {
             </li>
           ))}
         </ul>
+      )}
+
+      {visibles.length > mostrar && (
+        <div className="mostrar-mas">
+          <button type="button" className="boton-secundario" onClick={() => setMostrar((m) => m + POR_PAGINA)}>
+            Mostrar más ({visibles.length - mostrar} restantes)
+          </button>
+        </div>
       )}
 
       {compartir && <CompartirEvento evento={compartir} onCerrar={() => setCompartir(null)} />}

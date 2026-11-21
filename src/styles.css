@@ -529,3 +529,13 @@ p { margin: 0; }
 .foto-campo__subir { position: relative; cursor: pointer; }
 .foto-campo__subir input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
 .foto-campo__subir:focus-within { outline: 3px solid var(--cian); outline-offset: 2px; }
+
+/* Buscador de eventos */
+.buscador { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 0 0 16px; }
+.buscador__campo { flex: 1 1 320px; max-width: 520px; }
+.buscador__campo input { width: 100%; height: 46px; padding: 0 18px; border: 1px solid var(--borde-fuerte); border-radius: 999px; font: inherit; background: var(--superficie); }
+.buscador__campo input:focus-visible { outline: 3px solid var(--orquidea); outline-offset: 2px; }
+.buscador__cuenta { margin: 0; color: var(--texto-suave); font-size: 14px; display: flex; align-items: center; gap: 10px; }
+.buscador__cuenta button { background: none; border: 0; padding: 4px 6px; color: var(--morado); font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; }
+.mostrar-mas { display: flex; justify-content: center; margin-top: 20px; }
+.mostrar-mas .boton-secundario { margin-top: 0; }
